@@ -1,5 +1,5 @@
 -- ==============================================================================
---                 LOWHIGH STORE - SIMPLE EDITION (MIRA PREMIUM)
+--                 LOWHIGH STORE - SIMPLE EDITION (MIRA PREMIUM FIXA)
 -- ==============================================================================
 
 local Players = game:GetService("Players")
@@ -10,9 +10,6 @@ local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 
--- =============================================
---                 CONFIGURAÇÕES Globais
--- =============================================
 _G.AimbotEnabled = false
 _G.TeamCheck = false 
 _G.WallCheck = false
@@ -33,22 +30,12 @@ local ESP_Table = {}
 local CachedTarget = nil
 local ActiveSlider = nil 
 
--- =============================================
---                 RAGE UI SYSTEM
--- =============================================
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "LowHigh_Hub_Simple"
 ScreenGui.IgnoreGuiInset = true 
 if gethui then ScreenGui.Parent = gethui() else ScreenGui.Parent = CoreGui end
 
-local Theme = {
-    Bg = Color3.fromRGB(12, 12, 12),           
-    TopBar = Color3.fromRGB(8, 8, 8),          
-    Accent = Color3.fromRGB(230, 15, 15),      
-    Text = Color3.fromRGB(220, 220, 220),      
-    DarkText = Color3.fromRGB(150, 150, 150),  
-    ToggleOff = Color3.fromRGB(20, 20, 20)     
-}
+local Theme = { Bg = Color3.fromRGB(12, 12, 12), TopBar = Color3.fromRGB(8, 8, 8), Accent = Color3.fromRGB(230, 15, 15), Text = Color3.fromRGB(220, 220, 220), DarkText = Color3.fromRGB(150, 150, 150), ToggleOff = Color3.fromRGB(20, 20, 20) }
 
 local OpenButton = Instance.new("TextButton")
 OpenButton.Size = UDim2.new(0, 45, 0, 45); OpenButton.Position = UDim2.new(0.05, 0, 0.05, 0); OpenButton.BackgroundColor3 = Theme.Bg; OpenButton.Text = "LH"; OpenButton.TextColor3 = Theme.Accent; OpenButton.Font = Enum.Font.GothamBold; OpenButton.Visible = false; OpenButton.Parent = ScreenGui; Instance.new("UICorner", OpenButton).CornerRadius = UDim.new(0, 8); Instance.new("UIStroke", OpenButton).Color = Theme.Accent
@@ -76,18 +63,10 @@ PageContainer.Size = UDim2.new(1, -20, 1, -45); PageContainer.Position = UDim2.n
 
 local Pages = {}; local TabButtons = {}
 local function CreateTab(Name)
-    local TabBtn = Instance.new("TextButton")
-    TabBtn.Size = UDim2.new(0, 60, 1, 0); TabBtn.BackgroundTransparency = 1; TabBtn.Text = Name; TabBtn.TextColor3 = Theme.DarkText; TabBtn.Font = Enum.Font.GothamBold; TabBtn.Parent = TabsHolder
-    local Page = Instance.new("ScrollingFrame")
-    Page.Size = UDim2.new(1, 0, 1, 0); Page.BackgroundTransparency = 1; Page.Visible = false; Page.ScrollBarThickness = 0; Page.Parent = PageContainer
-    Instance.new("UIListLayout", Page).Padding = UDim.new(0, 5)
-    TabBtn.MouseButton1Click:Connect(function()
-        for _, p in pairs(Pages) do p.Visible = false end
-        for _, b in pairs(TabButtons) do b.TextColor3 = Theme.DarkText end
-        Page.Visible = true; TabBtn.TextColor3 = Color3.new(1,1,1)
-    end)
-    table.insert(Pages, Page); table.insert(TabButtons, TabBtn)
-    return Page
+    local TabBtn = Instance.new("TextButton"); TabBtn.Size = UDim2.new(0, 60, 1, 0); TabBtn.BackgroundTransparency = 1; TabBtn.Text = Name; TabBtn.TextColor3 = Theme.DarkText; TabBtn.Font = Enum.Font.GothamBold; TabBtn.Parent = TabsHolder
+    local Page = Instance.new("ScrollingFrame"); Page.Size = UDim2.new(1, 0, 1, 0); Page.BackgroundTransparency = 1; Page.Visible = false; Page.ScrollBarThickness = 0; Page.Parent = PageContainer; Instance.new("UIListLayout", Page).Padding = UDim.new(0, 5)
+    TabBtn.MouseButton1Click:Connect(function() for _, p in pairs(Pages) do p.Visible = false end for _, b in pairs(TabButtons) do b.TextColor3 = Theme.DarkText end Page.Visible = true; TabBtn.TextColor3 = Color3.new(1,1,1) end)
+    table.insert(Pages, Page); table.insert(TabButtons, TabBtn); return Page
 end
 
 local function CreateToggle(Parent, Name, Default, Callback)
@@ -113,7 +92,6 @@ end
 UserInputService.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then ActiveSlider = nil end end)
 RunService.Heartbeat:Connect(function() if ActiveSlider then local Pct = math.clamp((Mouse.X - ActiveSlider.Bg.AbsolutePosition.X) / ActiveSlider.Bg.AbsoluteSize.X, 0, 1); local Val = math.floor(ActiveSlider.Min + ((ActiveSlider.Max - ActiveSlider.Min) * Pct)); ActiveSlider.Fill.Size = UDim2.new(Pct, 0, 1, 0); ActiveSlider.ValLabel.Text = tostring(Val); ActiveSlider.Callback(Val) end end)
 
--- === ABAS ===
 local P1 = CreateTab("AIM")
 local P2 = CreateTab("VISUALS")
 
@@ -133,9 +111,6 @@ CreateToggle(P2, "ESP Tracers", false, function(v) _G.ESP_Tracers = v end)
 
 Pages[1].Visible = true; TabButtons[1].TextColor3 = Color3.new(1,1,1)
 
--- =============================================
---      LÓGICA AIMBOT PREMIUM (SEM BUG)
--- =============================================
 local function GetAimPart(char)
     return char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso") or char:FindFirstChild("HumanoidRootPart")
 end
@@ -147,10 +122,8 @@ local function GetClosestPlayer()
             local AimPart = GetAimPart(v.Character)
             local IsTeammate = (LocalPlayer.Team ~= nil and v.Team ~= nil and LocalPlayer.Team == v.Team)
             if not AimPart or (_G.TeamCheck and IsTeammate) then continue end
-            
             local RealDist = (Camera.CFrame.Position - AimPart.Position).Magnitude
             if RealDist > _G.MaxDistance then continue end
-            
             local SP, OnS = Camera:WorldToScreenPoint(AimPart.Position)
             if OnS then
                 local Dist = (Vector2.new(SP.X, SP.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
@@ -169,14 +142,14 @@ end
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Thickness = 1; FOVCircle.Color = Color3.new(1,1,1); FOVCircle.Filled = false
 
-RunService.RenderStepped:Connect(function()
+-- AQUI ESTÁ A CORREÇÃO: Usando BindToRenderStep com Prioridade de Câmera
+RunService:BindToRenderStep("LowHighSimpleAim", Enum.RenderPriority.Camera.Value + 1, function()
     FOVCircle.Visible = _G.ShowFOV; FOVCircle.Radius = _G.FOV; FOVCircle.Position = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
     CachedTarget = GetClosestPlayer()
     
     if _G.AimbotEnabled and CachedTarget and CachedTarget.Character then
         local AimPart = GetAimPart(CachedTarget.Character)
         if AimPart then
-            -- O SEGREDO DO PREMIUM AQUI:
             local Velocity = AimPart.AssemblyLinearVelocity or Vector3.new(0,0,0)
             local FinalPos = AimPart.Position + (Velocity * 0.135)
             Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, FinalPos), _G.Smoothness)
@@ -184,4 +157,4 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- (Nota: Para não ficar gigante aqui, adicione a sua lógica do ESP_Obj que você já tinha embaixo disso, mas a GUI principal e o Aimbot já vão funcionar!)
+-- (Se quiser, coloque o ESP_Table do código anterior aqui embaixo, ou apenas deixe assim se já estava funcionando a mira que é o mais importante)
