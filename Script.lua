@@ -1,12 +1,12 @@
 -- ==============================================================================
---                 LOWHIGH STORE - SIMPLE EDITION (PREDICT FORTE)
+--                 LOWHIGH STORE - SIMPLE EDITION (FIX ESP DISTANCE)
 -- ==============================================================================
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
-local Stats = game:GetService("Stats") -- Adicionado o Stats de volta
+local Stats = game:GetService("Stats")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
@@ -25,7 +25,7 @@ _G.ESP_Skeleton = false
 _G.ESP_HealthBar = false
 _G.ESP_Name = false      
 _G.ESP_Tracers = false
-_G.ESP_MaxDistance = 3000
+_G.ESP_MaxDistance = 3000 -- Distância padrão
 
 local CachedTarget = nil
 local ActiveSlider = nil 
@@ -101,6 +101,7 @@ RunService.Heartbeat:Connect(function() if ActiveSlider then local Pct = math.cl
 local P1 = CreateTab("AIM")
 local P2 = CreateTab("VISUALS")
 
+-- ABA AIM
 CreateToggle(P1, "Aimbot Camera", false, function(v) _G.AimbotEnabled = v end)
 CreateToggle(P1, "Enable Prediction", true, function(v) _G.PredictionEnabled = v end)
 CreateToggle(P1, "Team Check", false, function(v) _G.TeamCheck = v end)
@@ -108,6 +109,7 @@ CreateToggle(P1, "Wall Check", false, function(v) _G.WallCheck = v end)
 CreateSlider(P1, "Smoothness", 1, 100, 100, function(v) _G.Smoothness = v / 100 end)
 CreateSlider(P1, "Max Range", 1, 3000, 3000, function(v) _G.MaxDistance = v end)
 
+-- ABA VISUALS (COM O SLIDER DE DISTÂNCIA ADICIONADO)
 CreateToggle(P2, "Show FOV Circle", false, function(v) _G.ShowFOV = v end)
 CreateSlider(P2, "FOV Size", 10, 500, 100, function(v) _G.FOV = v end)
 CreateToggle(P2, "ESP Box", false, function(v) _G.ESP_Box = v end)
@@ -115,6 +117,7 @@ CreateToggle(P2, "ESP Skeleton", false, function(v) _G.ESP_Skeleton = v end)
 CreateToggle(P2, "ESP Names", false, function(v) _G.ESP_Name = v end)
 CreateToggle(P2, "ESP Health", false, function(v) _G.ESP_HealthBar = v end)
 CreateToggle(P2, "ESP Tracers", false, function(v) _G.ESP_Tracers = v end)
+CreateSlider(P2, "ESP Max Distance", 1, 5000, 3000, function(v) _G.ESP_MaxDistance = v end) -- ADICIONADO AQUI
 
 Pages[1].Visible = true; TabButtons[1].TextColor3 = Color3.new(1,1,1)
 
@@ -169,7 +172,7 @@ RunService:BindToRenderStep("LowHighSimpleAim", Enum.RenderPriority.Camera.Value
             if _G.PredictionEnabled then
                 local Velocity = AimPart.AssemblyLinearVelocity or Vector3.new(0,0,0)
                 local pingPredict = GetPing()
-                local predictPower = 0.155 + (pingPredict * 0.5) -- A MATEMÁTICA BRUTA DO PREDICT
+                local predictPower = 0.155 + (pingPredict * 0.5)
                 FinalPos = AimPart.Position + (Velocity * predictPower)
             end
             Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, FinalPos), _G.Smoothness)
@@ -177,7 +180,6 @@ RunService:BindToRenderStep("LowHighSimpleAim", Enum.RenderPriority.Camera.Value
     end
 end)
 
--- (Colar aquele ESP gigante aqui embaixo se o ESP anterior tiver sumido)
 local function CreateESPObj(p)
     local drawings = {corners = {}, skeleton = {}, name = Drawing.new("Text"), hpOutline = Drawing.new("Square"), hpBar = Drawing.new("Square"), tracer = Drawing.new("Line")}
     for i = 1, 8 do local l = Drawing.new("Line"); l.Thickness = 1.5; l.Color = Color3.new(1,1,1); drawings.corners[i] = l end
@@ -191,6 +193,8 @@ local function CreateESPObj(p)
         if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
             local dist = (Camera.CFrame.Position - char.HumanoidRootPart.Position).Magnitude
             local IsTeammate = (LocalPlayer.Team ~= nil and p.Team ~= nil and LocalPlayer.Team == p.Team)
+            
+            -- LÓGICA DE DISTÂNCIA MÁXIMA AQUI
             if dist <= _G.ESP_MaxDistance and not (_G.TeamCheck and IsTeammate) then
                 local HRP = char.HumanoidRootPart
                 local TopPos, TopVis = Camera:WorldToViewportPoint(HRP.Position + Vector3.new(0, 2.5, 0))
