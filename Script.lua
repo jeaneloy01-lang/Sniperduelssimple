@@ -1,11 +1,12 @@
 -- ==============================================================================
---                 LOWHIGH STORE - SIMPLE EDITION (GUI FIX)
+--                 LOWHIGH STORE - SIMPLE EDITION (PREDICT FORTE)
 -- ==============================================================================
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
+local Stats = game:GetService("Stats") -- Adicionado o Stats de volta
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
@@ -33,7 +34,6 @@ local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "LowHigh_Hub_Simple"
 ScreenGui.IgnoreGuiInset = true 
 
--- ANTI-CRASH PARA MOBILE (Delta/Hydrogen)
 local success, err = pcall(function()
     if syn and syn.protect_gui then ScreenGui.Parent = CoreGui 
     elseif gethui then ScreenGui.Parent = gethui() 
@@ -102,6 +102,7 @@ local P1 = CreateTab("AIM")
 local P2 = CreateTab("VISUALS")
 
 CreateToggle(P1, "Aimbot Camera", false, function(v) _G.AimbotEnabled = v end)
+CreateToggle(P1, "Enable Prediction", true, function(v) _G.PredictionEnabled = v end)
 CreateToggle(P1, "Team Check", false, function(v) _G.TeamCheck = v end)
 CreateToggle(P1, "Wall Check", false, function(v) _G.WallCheck = v end)
 CreateSlider(P1, "Smoothness", 1, 100, 100, function(v) _G.Smoothness = v / 100 end)
@@ -114,9 +115,13 @@ CreateToggle(P2, "ESP Skeleton", false, function(v) _G.ESP_Skeleton = v end)
 CreateToggle(P2, "ESP Names", false, function(v) _G.ESP_Name = v end)
 CreateToggle(P2, "ESP Health", false, function(v) _G.ESP_HealthBar = v end)
 CreateToggle(P2, "ESP Tracers", false, function(v) _G.ESP_Tracers = v end)
-CreateSlider(P2, "ESP Max Dist", 1, 3000, 3000, function(v) _G.ESP_MaxDistance = v end)
 
 Pages[1].Visible = true; TabButtons[1].TextColor3 = Color3.new(1,1,1)
+
+local function GetPing()
+    local success, ping = pcall(function() return Stats.Network.ServerStatsItem["Data Ping"]:GetValue() end)
+    return success and (ping / 1000) or 0.1
+end
 
 local function GetAimPart(char)
     return char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso") or char:FindFirstChild("HumanoidRootPart")
@@ -160,13 +165,19 @@ RunService:BindToRenderStep("LowHighSimpleAim", Enum.RenderPriority.Camera.Value
     if _G.AimbotEnabled and CachedTarget and CachedTarget.Character then
         local AimPart = GetAimPart(CachedTarget.Character)
         if AimPart then
-            local Velocity = AimPart.AssemblyLinearVelocity or Vector3.new(0,0,0)
-            local FinalPos = AimPart.Position + (Velocity * 0.135)
+            local FinalPos = AimPart.Position
+            if _G.PredictionEnabled then
+                local Velocity = AimPart.AssemblyLinearVelocity or Vector3.new(0,0,0)
+                local pingPredict = GetPing()
+                local predictPower = 0.155 + (pingPredict * 0.5) -- A MATEMÁTICA BRUTA DO PREDICT
+                FinalPos = AimPart.Position + (Velocity * predictPower)
+            end
             Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, FinalPos), _G.Smoothness)
         end
     end
 end)
 
+-- (Colar aquele ESP gigante aqui embaixo se o ESP anterior tiver sumido)
 local function CreateESPObj(p)
     local drawings = {corners = {}, skeleton = {}, name = Drawing.new("Text"), hpOutline = Drawing.new("Square"), hpBar = Drawing.new("Square"), tracer = Drawing.new("Line")}
     for i = 1, 8 do local l = Drawing.new("Line"); l.Thickness = 1.5; l.Color = Color3.new(1,1,1); drawings.corners[i] = l end
