@@ -1,40 +1,81 @@
--- ==============================================================================
---                 LOWHIGH STORE - SIMPLE EDITION (SEM SILENT AIM)
--- ==============================================================================
-
+-- [[ LOWHIGH STORE - SIMPLE EDITION (Elite Hub Engine) ]] --
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
+local Stats = game:GetService("Stats")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 
--- =============================================
---                 CONFIGURAÇÕES Globais
--- =============================================
+-- CONFIGS GLOBAIS
 _G.AimbotEnabled = false
 _G.TeamCheck = false 
 _G.WallCheck = false
-_G.PredictionEnabled = true
 _G.FOV = 100
 _G.Smoothness = 1
 _G.MaxDistance = 3000
+_G.PredictionEnabled = true 
+_G.BulletSpeed = 2500 
 
+-- VISUALS
 _G.ShowFOV = false
 _G.ESP_Box = false        
-_G.ESP_Skeleton = false
 _G.ESP_HealthBar = false
-_G.ESP_Name = false      
 _G.ESP_Tracers = false
+_G.ESP_Name = false      
+_G.ESP_TeamCheck = false
+_G.ESP_Skeleton = false 
 _G.ESP_MaxDistance = 3000
 
 local ESP_Table = {}
 local CachedTarget = nil
-local CachedPredPos = nil
 local ActiveSlider = nil 
 
+-- [[ COLOQUE AQUI TODO O SEU SISTEMA DE RAGE UI (Criação de Tabs, Frames e Toggles) ]] --
+-- [[ IMPORTANTE: No Tab de AIM, remova o Toggle do Silent Aim ]] --
+
 -- =============================================
+--        LÓGICA MATEMÁTICA DO PREMIUM (GOD MODE)
+-- =============================================
+
+local function GetAimbotPart(char)
+    return char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso") or char:FindFirstChild("HumanoidRootPart")
+end
+
+local function GetClosestPlayer()
+    local Target, MaxDist = nil, _G.FOV
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0 then
+            local AimPart = GetAimbotPart(v.Character)
+            if not AimPart or (_G.TeamCheck and v.Team == LocalPlayer.Team) then continue end
+            local RealDist = (Camera.CFrame.Position - AimPart.Position).Magnitude
+            if RealDist > _G.MaxDistance then continue end
+            local SP, OnS = Camera:WorldToScreenPoint(AimPart.Position)
+            if OnS then
+                local Dist = (Vector2.new(SP.X, SP.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
+                if Dist < MaxDist then Target = v; MaxDist = Dist end
+            end
+        end
+    end
+    return Target
+end
+
+-- LOOP DE MIRA (IGUAL AO PREMIUM)
+RunService:BindToRenderStep("LowHighSimple", 201, function()
+    CachedTarget = GetClosestPlayer()
+    if _G.AimbotEnabled and CachedTarget and CachedTarget.Character then
+        local AimPart = GetAimbotPart(CachedTarget.Character)
+        if AimPart then
+            local CameraAimPos = AimPart.Position
+            if _G.PredictionEnabled then
+                local Velocity = AimPart.AssemblyLinearVelocity or Vector3.new(0,0,0)
+                CameraAimPos = AimPart.Position + (Velocity * 0.135) -- Predict do Premium
+            end
+            Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, CameraAimPos), _G.Smoothness)
+        end
+    end
+end)
 --                 RAGE UI SYSTEM
 -- =============================================
 local ScreenGui = Instance.new("ScreenGui")
